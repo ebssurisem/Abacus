@@ -2,7 +2,8 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>컴퓨터용 대주판</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>플라스틱 타격음 주판 - 모바일 최적화</title>
     <style>
         :root {
             --bead-width: 120px;
@@ -23,21 +24,36 @@
         body {
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             min-height: 100vh; margin: 0; background-color: #dcdcdc; font-family: sans-serif;
+            /* 모바일에서 롱탭 메뉴나 텍스트 선택 방지 */
+            -webkit-user-select: none; user-select: none;
+            touch-action: none; 
         }
 
-        .controls { margin-bottom: 20px; }
+        .controls { margin-bottom: 20px; z-index: 100; }
         .reset-btn {
             padding: 15px 40px; font-size: 20px; font-weight: bold; color: white;
             background-color: #444; border: none; border-radius: 8px; cursor: pointer;
             box-shadow: 0 4px 0 #222; transition: all 0.1s;
+            touch-action: manipulation;
         }
         .reset-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #222; }
+
+        /* 주판이 화면을 넘칠 때 가로 스크롤 허용 */
+        .abacus-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: flex-start;
+            overflow-x: auto;
+            padding: 20px;
+            -webkit-overflow-scrolling: touch; /* iOS 부드러운 스크롤 */
+        }
 
         .abacus {
             display: inline-flex; 
             background-color: var(--abacus-bg); 
             padding: 0 20px; border: 15px solid #110908; border-radius: 12px;
             box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+            margin: 0 auto; /* 중앙 정렬 */
         }
 
         .column {
@@ -70,6 +86,8 @@
             position: absolute; transition: transform 0.1s ease-out;
             clip-path: polygon(43% 0%, 57% 0%, 100% 50%, 57% 100%, 43% 100%, 0% 50%);
             background: radial-gradient(circle at 50% 40%, var(--bead-light), var(--bead-main) 70%, var(--bead-dark));
+            /* 터치 시 브라우저 기본 동작 방지 */
+            touch-action: none;
         }
 
         .bead.active {
@@ -92,6 +110,23 @@
 
         .lower-bead.active { transform: translateY(calc(var(--lower-gap) * -1)); }
 
+        /* 화면이 작을 때 주판알 크기 자동 축소 (반응형) */
+        @media (max-width: 768px) {
+            :root {
+                --bead-width: 60px;
+                --bead-height: 30px;
+                --upper-space: 50px;
+                --upper-gap: 15px;
+                --lower-gap: 16px;
+                --beam-height: 10px;
+            }
+            .column { height: 210px; }
+            .low-4 { bottom: 90px; } 
+            .low-3 { bottom: 60px; }
+            .low-2 { bottom: 30px; }
+            .low-1 { bottom: 0; }
+            .dot { width: 6px; height: 6px; }
+        }
     </style>
 </head>
 <body>
@@ -100,21 +135,20 @@
     <button class="reset-btn" onclick="resetAbacus()">주판털기 (Reset)</button>
 </div>
 
-<div class="abacus" id="abacus"></div>
+<div class="abacus-wrapper">
+    <div class="abacus" id="abacus"></div>
+</div>
 
 <script>
     let audioCtx = null;
 
-    // 플라스틱 타격음을 생성하는 함수
     function playPlasticClick() {
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
         if (audioCtx.state === 'suspended') audioCtx.resume();
 
-        const duration = 0.05; // 소리 길이 (매우 짧게)
-        
-        // 1. 노이즈 소스 생성 (플라스틱의 거친 마찰음 역할)
+        const duration = 0.05;
         const bufferSize = audioCtx.sampleRate * duration;
         const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
         const data = buffer.getChannelData(0);
@@ -124,12 +158,10 @@
         const noise = audioCtx.createBufferSource();
         noise.buffer = buffer;
 
-        // 2. 필터 설정 (높은 주파수만 남겨 '착' 하는 소리 강조)
         const filter = audioCtx.createBiquadFilter();
         filter.type = 'highpass';
         filter.frequency.setValueAtTime(1000, audioCtx.currentTime);
 
-        // 3. 엔벨로프(음량 조절) 설정
         const gainNode = audioCtx.createGain();
         gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
@@ -164,8 +196,10 @@
         abacus.appendChild(col);
     }
 
+    // 모바일 터치 대응: pointerdown 이벤트 사용
     document.querySelectorAll('.bead').forEach(bead => {
-        bead.addEventListener('click', function() {
+        bead.addEventListener('pointerdown', function(e) {
+            e.preventDefault(); // 기본 터치 동작 방지
             playPlasticClick();
             if (this.classList.contains('upper-bead')) {
                 this.classList.toggle('active');
@@ -195,10 +229,13 @@
         });
     }
 
-    window.addEventListener('mousedown', () => {
+    // 초기 오디오 컨텍스트 활성화
+    const unlockAudio = () => {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
-    }, { once: true });
+        window.removeEventListener('pointerdown', unlockAudio);
+    };
+    window.addEventListener('pointerdown', unlockAudio);
 </script>
 
 </body>
