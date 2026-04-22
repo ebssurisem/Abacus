@@ -3,63 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>컴퓨터용 대주판 - 모바일 최적화</title>
+    <title>반응형 교육용 대주판</title>
     <style>
         :root {
-            --bead-width: 120px;
-            --bead-height: 60px;
-            --beam-height: 20px;
-            --rod-width: 16px;
+            /* 반응형 크기 설계: 화면 높이에 맞춰 주판 크기가 자동 조절됨 */
+            --bead-width: min(80px, 7vw);
+            --bead-height: calc(var(--bead-width) * 0.5);
+            --beam-height: calc(var(--bead-width) * 0.15);
+            --rod-width: calc(var(--bead-width) * 0.12);
+            
             --frame-color: #2c1a15;
             --beam-bg: #ffffff;
             --abacus-bg: #2c1a15;
             --bead-main: #8d4a36; 
             --bead-light: #b36b53;
             --bead-dark: #5e2c1e;
-            --upper-space: 90px; 
-            --upper-gap: 30px; 
-            --lower-gap: 31px; 
+            
+            --upper-space: calc(var(--bead-height) * 1.5); 
+            --upper-gap: calc(var(--bead-height) * 0.5); 
+            --lower-gap: calc(var(--upper-gap) + 1px); 
         }
 
         body {
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             min-height: 100vh; margin: 0; background-color: #dcdcdc; font-family: sans-serif;
-            /* 모바일에서 롱탭 메뉴나 텍스트 선택 방지 */
             -webkit-user-select: none; user-select: none;
             touch-action: none; 
+            overflow: hidden; /* 바디 스크롤 방지 */
         }
 
-        .controls { margin-bottom: 20px; z-index: 100; }
+        .controls { 
+            margin-bottom: min(20px, 2vh); 
+            z-index: 100; 
+            width: 100%; 
+            display: flex; 
+            justify-content: center; 
+        }
+        
         .reset-btn {
-            padding: 15px 40px; font-size: 20px; font-weight: bold; color: white;
+            padding: 12px 30px; font-size: 18px; font-weight: bold; color: white;
             background-color: #444; border: none; border-radius: 8px; cursor: pointer;
             box-shadow: 0 4px 0 #222; transition: all 0.1s;
             touch-action: manipulation;
         }
         .reset-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #222; }
 
-        /* 주판이 화면을 넘칠 때 가로 스크롤 허용 */
         .abacus-wrapper {
             width: 100%;
             display: flex;
-            justify-content: flex-start;
-            overflow-x: auto;
-            padding: 20px;
-            -webkit-overflow-scrolling: touch; /* iOS 부드러운 스크롤 */
+            justify-content: center;
+            align-items: center;
+            overflow-x: auto; /* 좁은 화면에서 가로 스크롤 */
+            padding: 10px;
+            -webkit-overflow-scrolling: touch;
         }
 
         .abacus {
             display: inline-flex; 
             background-color: var(--abacus-bg); 
-            padding: 0 20px; border: 15px solid #110908; border-radius: 12px;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
-            margin: 0 auto; /* 중앙 정렬 */
+            padding: 0 min(20px, 2vw); 
+            border: min(15px, 1.5vw) solid #110908; 
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            flex-shrink: 0; /* 크기 유지 */
         }
 
         .column {
-            position: relative; width: var(--bead-width); 
-            height: 383px; 
-            display: flex; flex-direction: column; align-items: center; margin: 0 2px;
+            position: relative; 
+            width: var(--bead-width); 
+            /* 전체 높이를 주판알 크기에 비례하게 설정 */
+            height: calc(var(--bead-height) * 6.5); 
+            display: flex; flex-direction: column; align-items: center; 
+            margin: 0 1px;
         }
 
         .rod {
@@ -69,14 +84,16 @@
 
         .beam {
             position: absolute; top: var(--upper-space);
-            width: calc(100% + 10px); height: var(--beam-height);
+            width: calc(100% + 4px); height: var(--beam-height);
             background-color: var(--beam-bg); z-index: 5;
-            border-top: 2px solid #eee; border-bottom: 2px solid #888;
+            border-top: 1px solid #eee; border-bottom: 1px solid #888;
         }
 
         .dot {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 12px; height: 12px; background-color: #000; border-radius: 50%;
+            width: calc(var(--rod-width) * 0.8); 
+            height: calc(var(--rod-width) * 0.8); 
+            background-color: #000; border-radius: 50%;
             display: none; z-index: 6;
         }
         .has-dot .dot { display: block; }
@@ -86,7 +103,6 @@
             position: absolute; transition: transform 0.1s ease-out;
             clip-path: polygon(43% 0%, 57% 0%, 100% 50%, 57% 100%, 43% 100%, 0% 50%);
             background: radial-gradient(circle at 50% 40%, var(--bead-light), var(--bead-main) 70%, var(--bead-dark));
-            /* 터치 시 브라우저 기본 동작 방지 */
             touch-action: none;
         }
 
@@ -103,29 +119,21 @@
             bottom: 0; width: 100%; 
         }
 
-        .low-4 { bottom: 180px; } 
-        .low-3 { bottom: 120px; }
-        .low-2 { bottom: 60px; }
+        /* 아래알 위치를 높이에 따라 유동적으로 배치 */
+        .low-4 { bottom: calc(var(--bead-height) * 3); } 
+        .low-3 { bottom: calc(var(--bead-height) * 2); }
+        .low-2 { bottom: calc(var(--bead-height) * 1); }
         .low-1 { bottom: 0; }
 
         .lower-bead.active { transform: translateY(calc(var(--lower-gap) * -1)); }
 
-        /* 화면이 작을 때 주판알 크기 자동 축소 (반응형) */
-        @media (max-width: 768px) {
+        /* 가로 모드에서 높이가 너무 낮을 때 대응 */
+        @media (max-height: 400px) {
             :root {
-                --bead-width: 60px;
-                --bead-height: 30px;
-                --upper-space: 50px;
-                --upper-gap: 15px;
-                --lower-gap: 16px;
-                --beam-height: 10px;
+                --bead-width: min(60px, 15vh);
             }
-            .column { height: 210px; }
-            .low-4 { bottom: 90px; } 
-            .low-3 { bottom: 60px; }
-            .low-2 { bottom: 30px; }
-            .low-1 { bottom: 0; }
-            .dot { width: 6px; height: 6px; }
+            .controls { margin-bottom: 5px; }
+            .reset-btn { padding: 8px 20px; font-size: 14px; }
         }
     </style>
 </head>
@@ -196,10 +204,9 @@
         abacus.appendChild(col);
     }
 
-    // 모바일 터치 대응: pointerdown 이벤트 사용
     document.querySelectorAll('.bead').forEach(bead => {
         bead.addEventListener('pointerdown', function(e) {
-            e.preventDefault(); // 기본 터치 동작 방지
+            e.preventDefault();
             playPlasticClick();
             if (this.classList.contains('upper-bead')) {
                 this.classList.toggle('active');
@@ -229,7 +236,6 @@
         });
     }
 
-    // 초기 오디오 컨텍스트 활성화
     const unlockAudio = () => {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
