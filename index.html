@@ -2,10 +2,11 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>컴퓨터용 대주판 - 반응형</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>컴퓨터용 대주판</title>
     <style>
         :root {
+            /* 기존 수치 엄격 유지 */
             --bead-width: 120px;
             --bead-height: 60px;
             --beam-height: 20px;
@@ -21,29 +22,42 @@
             --lower-gap: 31px;
         }
 
-        body {
-            display: flex; justify-content: center; align-items: center;
-            min-height: 100vh; margin: 0; background-color: #dcdcdc; font-family: sans-serif;
-            -webkit-user-select: none; user-select: none;
-            touch-action: none; overflow: hidden; /* 화면 출렁임 방지 */
+        /* 화면 출렁임 및 스크롤 방지 */
+        html, body {
+            width: 100%;
+            height: 100%;
+            height: 100dvh; /* 최신 브라우저 동적 높이 대응 */
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #dcdcdc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: none;
         }
 
-        /* 버튼과 주판을 하나로 묶는 메인 컨테이너 */
+        /* 전체 인터페이스 덩어리 */
         .main-interface {
-            display: flex; flex-direction: column; align-items: center;
-            transform-origin: center center; /* 배율 조정 중심 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transform-origin: center center;
+            will-change: transform;
         }
 
+        /* 버튼을 주판 프레임에 거의 붙도록 설정 */
         .controls { 
-            margin-bottom: 10px; /* 주판 프레임과 버튼 사이 간격 최소화 */
+            margin-bottom: 5px; 
             z-index: 100; 
         }
 
         .reset-btn {
-            padding: 12px 40px; font-size: 20px; font-weight: bold; color: white;
+            padding: 10px 40px; font-size: 18px; font-weight: bold; color: white;
             background-color: #444; border: none; border-radius: 8px; cursor: pointer;
             box-shadow: 0 4px 0 #222; transition: all 0.1s;
-            touch-action: manipulation;
+            white-space: nowrap;
         }
         .reset-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #222; }
 
@@ -83,7 +97,6 @@
             position: absolute; transition: transform 0.1s ease-out;
             clip-path: polygon(43% 0%, 57% 0%, 100% 50%, 57% 100%, 43% 100%, 0% 50%);
             background: radial-gradient(circle at 50% 40%, var(--bead-light), var(--bead-main) 70%, var(--bead-dark));
-            touch-action: none;
         }
 
         .bead.active {
@@ -159,22 +172,28 @@
     }
 
     function resizeAbacus() {
-        // 인터페이스 전체 너비와 높이를 계산
-        const interfaceWidth = mainInterface.offsetWidth;
-        const interfaceHeight = mainInterface.offsetHeight;
+        // 인터페이스의 원래 크기(버튼 포함)
+        const interfaceWidth = mainInterface.scrollWidth;
+        const interfaceHeight = mainInterface.scrollHeight;
         
-        // 화면 대비 여유 공간 설정 (90% 정도 차지하게)
-        const scaleX = (window.innerWidth * 0.9) / interfaceWidth;
-        const scaleY = (window.innerHeight * 0.85) / interfaceHeight;
+        // 브라우저의 실제 가용 영역 계산 (여백 5% 제외)
+        const availableWidth = window.innerWidth * 0.95;
+        const availableHeight = window.innerHeight * 0.95;
         
-        // 가로/세로 중 더 많이 줄여야 하는 배율을 선택해 왜곡 방지
-        const finalScale = Math.min(scaleX, scaleY, 1); 
+        const scaleX = availableWidth / interfaceWidth;
+        const scaleY = availableHeight / interfaceHeight;
+        
+        // 화면에 무조건 다 들어오도록 작은 배율 적용
+        const finalScale = Math.min(scaleX, scaleY); 
         
         mainInterface.style.transform = `scale(${finalScale})`;
     }
 
+    // 윈도우 크기 변경 시 및 초기 로드 시 배율 조정
     window.addEventListener('resize', resizeAbacus);
-    window.addEventListener('load', resizeAbacus);
+    window.addEventListener('orientationchange', () => {
+        setTimeout(resizeAbacus, 200);
+    });
 
     document.querySelectorAll('.bead').forEach(bead => {
         bead.addEventListener('pointerdown', function(e) {
@@ -212,6 +231,8 @@
     };
     window.addEventListener('pointerdown', unlockAudio);
     
+    // 강제 초기 실행
+    window.onload = resizeAbacus;
     setTimeout(resizeAbacus, 100);
 </script>
 
