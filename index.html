@@ -3,25 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>반응형 교육용 대주판</title>
+    <title>컴퓨터용 대주판 - 반응형</title>
     <style>
         :root {
-            /* 반응형 크기 설계: 화면 높이에 맞춰 주판 크기가 자동 조절됨 */
-            --bead-width: min(80px, 7vw);
-            --bead-height: calc(var(--bead-width) * 0.5);
-            --beam-height: calc(var(--bead-width) * 0.15);
-            --rod-width: calc(var(--bead-width) * 0.12);
-            
+            /* [복구] 기존 수치 그대로 유지 */
+            --bead-width: 120px;
+            --bead-height: 60px;
+            --beam-height: 20px;
+            --rod-width: 16px;
             --frame-color: #2c1a15;
             --beam-bg: #ffffff;
             --abacus-bg: #2c1a15;
             --bead-main: #8d4a36; 
             --bead-light: #b36b53;
             --bead-dark: #5e2c1e;
-            
-            --upper-space: calc(var(--bead-height) * 1.5); 
-            --upper-gap: calc(var(--bead-height) * 0.5); 
-            --lower-gap: calc(var(--upper-gap) + 1px); 
+            --upper-space: 90px; 
+            --upper-gap: 30px; 
+            --lower-gap: 31px; /* 가름대에 딱 붙는 기존 값 유지 */
         }
 
         body {
@@ -29,52 +27,40 @@
             min-height: 100vh; margin: 0; background-color: #dcdcdc; font-family: sans-serif;
             -webkit-user-select: none; user-select: none;
             touch-action: none; 
-            overflow: hidden; /* 바디 스크롤 방지 */
         }
 
-        .controls { 
-            margin-bottom: min(20px, 2vh); 
-            z-index: 100; 
-            width: 100%; 
-            display: flex; 
-            justify-content: center; 
-        }
-        
+        .controls { margin-bottom: 20px; z-index: 100; }
         .reset-btn {
-            padding: 12px 30px; font-size: 18px; font-weight: bold; color: white;
+            padding: 15px 40px; font-size: 20px; font-weight: bold; color: white;
             background-color: #444; border: none; border-radius: 8px; cursor: pointer;
             box-shadow: 0 4px 0 #222; transition: all 0.1s;
             touch-action: manipulation;
         }
         .reset-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #222; }
 
-        .abacus-wrapper {
-            width: 100%;
+        /* [반응형 핵심] 주판의 원래 크기는 유지하되, 화면이 작아지면 전체 배율을 줄임 */
+        .abacus-scale-container {
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow-x: auto; /* 좁은 화면에서 가로 스크롤 */
-            padding: 10px;
-            -webkit-overflow-scrolling: touch;
+            width: 100%;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
         .abacus {
             display: inline-flex; 
             background-color: var(--abacus-bg); 
-            padding: 0 min(20px, 2vw); 
-            border: min(15px, 1.5vw) solid #110908; 
-            border-radius: 12px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-            flex-shrink: 0; /* 크기 유지 */
+            padding: 0 20px; border: 15px solid #110908; border-radius: 12px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+            /* 배율 조정의 기준점 */
+            transform-origin: center center;
         }
 
         .column {
-            position: relative; 
-            width: var(--bead-width); 
-            /* 전체 높이를 주판알 크기에 비례하게 설정 */
-            height: calc(var(--bead-height) * 6.5); 
-            display: flex; flex-direction: column; align-items: center; 
-            margin: 0 1px;
+            position: relative; width: var(--bead-width); 
+            height: 383px; 
+            display: flex; flex-direction: column; align-items: center; margin: 0 2px;
         }
 
         .rod {
@@ -84,16 +70,14 @@
 
         .beam {
             position: absolute; top: var(--upper-space);
-            width: calc(100% + 4px); height: var(--beam-height);
+            width: calc(100% + 10px); height: var(--beam-height);
             background-color: var(--beam-bg); z-index: 5;
-            border-top: 1px solid #eee; border-bottom: 1px solid #888;
+            border-top: 2px solid #eee; border-bottom: 2px solid #888;
         }
 
         .dot {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: calc(var(--rod-width) * 0.8); 
-            height: calc(var(--rod-width) * 0.8); 
-            background-color: #000; border-radius: 50%;
+            width: 12px; height: 12px; background-color: #000; border-radius: 50%;
             display: none; z-index: 6;
         }
         .has-dot .dot { display: block; }
@@ -119,22 +103,14 @@
             bottom: 0; width: 100%; 
         }
 
-        /* 아래알 위치를 높이에 따라 유동적으로 배치 */
-        .low-4 { bottom: calc(var(--bead-height) * 3); } 
-        .low-3 { bottom: calc(var(--bead-height) * 2); }
-        .low-2 { bottom: calc(var(--bead-height) * 1); }
+        .low-4 { bottom: 180px; } 
+        .low-3 { bottom: 120px; }
+        .low-2 { bottom: 60px; }
         .low-1 { bottom: 0; }
 
         .lower-bead.active { transform: translateY(calc(var(--lower-gap) * -1)); }
 
-        /* 가로 모드에서 높이가 너무 낮을 때 대응 */
-        @media (max-height: 400px) {
-            :root {
-                --bead-width: min(60px, 15vh);
-            }
-            .controls { margin-bottom: 5px; }
-            .reset-btn { padding: 8px 20px; font-size: 14px; }
-        }
+        /* [추가] 화면 크기에 따른 스케일 자동 조절 스크립트 대응을 위한 설정 */
     </style>
 </head>
 <body>
@@ -143,50 +119,39 @@
     <button class="reset-btn" onclick="resetAbacus()">주판털기 (Reset)</button>
 </div>
 
-<div class="abacus-wrapper">
+<div class="abacus-scale-container" id="container">
     <div class="abacus" id="abacus"></div>
 </div>
 
 <script>
     let audioCtx = null;
 
+    // 사운드 로직 유지
     function playPlasticClick() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
-
         const duration = 0.05;
-        const bufferSize = audioCtx.sampleRate * duration;
-        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * duration, audioCtx.sampleRate);
         const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-            data[i] = Math.random() * 2 - 1;
-        }
+        for (let i = 0; i < buffer.length; i++) data[i] = Math.random() * 2 - 1;
         const noise = audioCtx.createBufferSource();
         noise.buffer = buffer;
-
         const filter = audioCtx.createBiquadFilter();
-        filter.type = 'highpass';
-        filter.frequency.setValueAtTime(1000, audioCtx.currentTime);
-
+        filter.type = 'highpass'; filter.frequency.setValueAtTime(1000, audioCtx.currentTime);
         const gainNode = audioCtx.createGain();
         gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-
-        noise.connect(filter);
-        filter.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-
-        noise.start();
-        noise.stop(audioCtx.currentTime + duration);
+        noise.connect(filter); filter.connect(gainNode); gainNode.connect(audioCtx.destination);
+        noise.start(); noise.stop(audioCtx.currentTime + duration);
     }
 
     const abacus = document.getElementById('abacus');
+    const container = document.getElementById('container');
     const totalCols = 13;
     const dotPositions = [];
     for (let i = totalCols - 3; i >= 0; i -= 3) { dotPositions.push(i); }
 
+    // 주판 생성 로직 유지
     for (let i = 0; i < totalCols; i++) {
         const col = document.createElement('div');
         col.className = 'column' + (dotPositions.includes(i) ? ' has-dot' : '');
@@ -203,6 +168,22 @@
         `;
         abacus.appendChild(col);
     }
+
+    // 반응형 스케일 계산 함수: 수치는 유지하고 배율만 조절
+    function resizeAbacus() {
+        const screenWidth = window.innerWidth * 0.95;
+        const abacusWidth = abacus.offsetWidth;
+        
+        if (abacusWidth > screenWidth) {
+            const scale = screenWidth / abacusWidth;
+            abacus.style.transform = `scale(${scale})`;
+        } else {
+            abacus.style.transform = `scale(1)`;
+        }
+    }
+
+    window.addEventListener('resize', resizeAbacus);
+    window.addEventListener('load', resizeAbacus);
 
     document.querySelectorAll('.bead').forEach(bead => {
         bead.addEventListener('pointerdown', function(e) {
@@ -221,7 +202,6 @@
         const beads = area.querySelectorAll('.lower-bead');
         const idx = parseInt(bead.dataset.idx);
         const isActive = bead.classList.contains('active');
-        
         beads.forEach(b => {
             const bIdx = parseInt(b.dataset.idx);
             if (!isActive && bIdx >= idx) b.classList.add('active');
@@ -231,9 +211,7 @@
 
     function resetAbacus() {
         if (audioCtx) playPlasticClick();
-        document.querySelectorAll('.bead').forEach(bead => {
-            bead.classList.remove('active');
-        });
+        document.querySelectorAll('.bead').forEach(bead => bead.classList.remove('active'));
     }
 
     const unlockAudio = () => {
@@ -242,6 +220,9 @@
         window.removeEventListener('pointerdown', unlockAudio);
     };
     window.addEventListener('pointerdown', unlockAudio);
+    
+    // 초기 로드 시 한 번 실행
+    setTimeout(resizeAbacus, 100);
 </script>
 
 </body>
